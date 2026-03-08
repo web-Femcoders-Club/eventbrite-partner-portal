@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+.vscode/
+.idea/
+STRATEGIC_PLAN_CONFIDENTIAL.md
