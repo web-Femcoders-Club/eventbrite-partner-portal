@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useEffect, useState } from 'react';
 import './index.css';
 import { jsPDF } from 'jspdf';
@@ -54,7 +55,9 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('portal_token'));
   const [inputKey, setInputKey] = useState('');
 
-  const API_URL = 'http://localhost:3001/api/partners/active-event';
+  // En producción (Railway) usamos el mismo servidor, en local apuntamos al puerto 3001
+  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
+  const API_URL = `${API_BASE}/api/partners/active-event`;
 
   const fetchRegistrations = async () => {
     if (!apiKey) return;
@@ -246,7 +249,7 @@ const App: React.FC = () => {
         <h2>Aviso del Sistema</h2>
         <p>{error}</p>
         <div className="error-actions">
-          <button onClick={() => window.location.reload()} className="btn-secondary">Reintentar</button>
+          <button onClick={handleLogout} className="btn-secondary">Reintentar / Cambiar Código</button>
           <a href="mailto:irina.ichim@femcodersclub.com" className="btn-primary">Soporte Técnico</a>
         </div>
       </div>

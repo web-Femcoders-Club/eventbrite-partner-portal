@@ -45,3 +45,12 @@ npm run build
 ## 📝 Notas de Configuración
 *   **Variables de Entorno:** El Backend utiliza el archivo `api/.env` para conectar con la base de datos MySQL en Railway.
 *   **Aesthetics:** Recordar que el diseño debe seguir la identidad de **FemCoders Club** (Magenta, Orange, Yellow, Dark Blue).
+
+## Codigos:
+
+✅ Configuración completada con éxito.
+------------------------------------------
+🔑 CÓDIGO FEMCODERS (VIP): admin-femcoders-2024-vip    
+🔑 CÓDIGO INFOJOBS: infojobs-partner-2024
+------------------------------------------
+Los crons que quedan son: 08:00, 12:30, 17:30, 20:00.

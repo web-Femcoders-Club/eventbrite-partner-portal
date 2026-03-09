@@ -1,14 +1,16 @@
 {
   "name": "eventbrite-partner-portal",
   "private": true,
+  "workspaces": [
+    "api",
+    "web"
+  ],
   "scripts": {
     "dev:web": "npm run dev -w web",
     "dev:api": "npm run dev -w api",
-    "dev": "npm run dev --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
-    "install:all": "npm install"
-  },
-  "workspaces": [
-    "apps/*"
-  ]
+    "build:web": "npm run build -w web",
+    "build:api": "npm run build -w api",
+    "build": "npm run build:web && npm run build:api",
+    "start": "npm start -w api"
+  }
 }

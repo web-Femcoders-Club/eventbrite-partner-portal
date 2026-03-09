@@ -12,8 +12,17 @@ Este proyecto es un monorepo profesional desarrollado para **FemCoders Club**. P
 
 ## 📁 Estructura
 
-- `apps/web`: Aplicación React (Frontend).
-- `apps/api`: Servidor Express (Backend/API).
+- `web/`: Aplicación React (Frontend).
+- `api/`: Servidor Express (Backend/API).
+
+## 🚀 Despliegue (Railway)
+
+Este proyecto está configurado para un **despliegue unificado** en Railway:
+
+1. Conecta el repositorio a un nuevo servicio en Railway.
+2. Añade un servicio de MySQL.
+3. Configura la variable `MYSQL_URL` referenciando a la base de datos.
+4. Ejecuta el seed para activar los códigos de acceso: `railway run npm run seed -w api`.
 
 ## 🛠️ Desarrollo
 

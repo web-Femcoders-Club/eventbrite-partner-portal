@@ -61,9 +61,7 @@ PartnerAccess.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   startDate: { type: DataTypes.DATE, allowNull: false },
   endDate: { type: DataTypes.DATE, allowNull: false }, 
-  canDownloadFullData: { type: DataTypes.BOOLEAN, defaultValue: false },
-  partnerId: { type: DataTypes.UUID, allowNull: true },
-  eventId: { type: DataTypes.STRING, allowNull: true }
+  canDownloadFullData: { type: DataTypes.BOOLEAN, defaultValue: false }
 }, { sequelize, modelName: 'partner_access', tableName: 'partner_access', underscored: false });
 
 // Relaciones
