@@ -17,18 +17,9 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: 'npm'
 
-    # Backend Tasks
-    - name: Install API dependencies
-      run: cd api && npm install
-    
-    - name: Build API
-      run: cd api && npm run build
+    - name: Install dependencies (Workspaces)
+      run: npm install
 
-    # Frontend Tasks
-    - name: Install Web dependencies
-      run: cd web && npm install
-    
-    - name: Build Web
-      run: cd web && npm run build
+    - name: Build All
+      run: npm run build

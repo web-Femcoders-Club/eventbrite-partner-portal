@@ -1,6 +1,6 @@
 # Eventbrite Partner Portal
 
-[![CI/CD Pipeline](https://github.com/femcodersclub/eventbrite-partner-portal/actions/workflows/ci.yml/badge.badge.svg)](https://github.com/femcodersclub/eventbrite-partner-portal/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/web-Femcoders-Club/eventbrite-partner-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/web-Femcoders-Club/eventbrite-partner-portal/actions/workflows/ci.yml)
 
 Este proyecto es un monorepo profesional desarrollado para **FemCoders Club**. Permite la gestión de inscripciones de eventos de Eventbrite de forma segura y transparente para partners como InfoJobs.
 
