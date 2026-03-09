@@ -142,7 +142,7 @@ const App: React.FC = () => {
     const csvRows = filteredAttendees.map(a => {
       const email = a.orderEmail || a.email || '';
       const dni = a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A');
-      const status = a.isIncomplete ? 'Incompleto' : 'Validado';
+      const status = (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado';
       // Limpiar comas para no romper el CSV
       const cleanFName = (a.firstName || '').replace(/,/g, '');
       const cleanLName = (a.lastName || '').replace(/,/g, '');
@@ -166,7 +166,7 @@ const App: React.FC = () => {
       Apellidos: a.lastName || '',
       Email: a.orderEmail || a.email || '',
       'DNI / ID': a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
-      Estado: a.isIncomplete ? 'Incompleto' : 'Validado',
+      Estado: (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado',
       Entradas: a.ticketCount,
       Acompañantes: a.guests ? a.guests.join(', ') : ''
     })));
@@ -194,7 +194,7 @@ const App: React.FC = () => {
       a.orderEmail || a.email,
       a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
       a.ticketCount,
-      a.isIncomplete ? 'Incompleto' : 'Validado'
+      (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado'
     ]);
 
     doc.autoTable({
