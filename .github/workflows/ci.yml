@@ -18,8 +18,10 @@ jobs:
       with:
         node-version: 20
 
-    - name: Install dependencies (Workspaces)
-      run: npm install
-
+    - name: Install dependencies (Fix for cross-platform bug)
+      run: |
+        rm -rf package-lock.json node_modules
+        npm install
+    
     - name: Build All
       run: npm run build
