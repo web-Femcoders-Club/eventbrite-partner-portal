@@ -4,6 +4,5 @@ buildCommand = "npm install && npm run build"
 
 [deploy]
 startCommand = "npm start -w api"
-healthcheckPath = "/health"
 restartPolicy = "ON_FAILURE"
 maxRetries = 3
