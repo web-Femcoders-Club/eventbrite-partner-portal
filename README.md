@@ -40,6 +40,17 @@ npm run dev:web
 npm run dev:api
 ```
 
+## ⚙️ Sincronización (Cron Jobs)
+
+Los registros de Eventbrite se sincronizan automáticamente con la base de datos en los siguientes horarios (Hora España):
+
+| Hora | Expresión Cron |
+| :--- | :--- |
+| **08:00** | `0 8 * * *` |
+| **12:30** | `30 12 * * *` |
+| **17:30** | `30 17 * * *` |
+| **20:00** | `0 20 * * *` |
+
 ## ⚖️ Cumplimiento Legal
 
 - **RGPD**: Minimización de datos y transparencia.

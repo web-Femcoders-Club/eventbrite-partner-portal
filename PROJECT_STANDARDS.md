@@ -15,6 +15,7 @@ Este documento define las reglas de oro que todos los agentes y desarrolladores 
 - **RGPD & Compliance**: DNI masking en UI, full data solo en exportaciones seguras.
 - **Senior Proactivity**: El agente no solo cumple tareas, sino que audita la arquitectura y propone mejoras de infraestructura (Vercel/Railway), seguridad (Helmet/CORS) y rendimiento (GZIP/Caching) de forma proactiva.
 - **API Error Handling**: Implementar un middleware global para que todas las respuestas de error sean consistentes y cumplan con la privacidad (RGPD friendly).
+- **Sincronización de Datos**: El sistema actualiza los registros 4 veces al día (08:00, 12:30, 17:30, 20:00) para garantizar la frescura de los datos.
 
 ## 🛠️ Tecnologías del Proyecto
 

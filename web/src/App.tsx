@@ -58,6 +58,17 @@ const App: React.FC = () => {
   // En producción (Railway) usamos el mismo servidor, en local apuntamos al puerto 3001
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
   const API_URL = `${API_BASE}/api/partners/active-event`;
+  
+  // Lógica de Bloqueo de Exportación (Solo 26 de Marzo 2026)
+  const isEventDay = () => {
+    const today = new Date();
+    // 26 de Marzo de 2026
+    return today.getFullYear() === 2026 && 
+           today.getMonth() === 2 && // Marzo es 2 (0-indexed)
+           today.getDate() === 26;
+  };
+
+  const canExport = isEventDay() || data?.partner?.includes('Admin');
 
   const fetchRegistrations = async () => {
     if (!apiKey) return;
@@ -326,10 +337,36 @@ const App: React.FC = () => {
             </div>
             <div className="table-controls">
               <div className="export-tools">
-                <button onClick={handleExportCSV} className="btn-export csv" title="Descargar CSV">CSV</button>
-                <button onClick={handleExportExcel} className="btn-export excel" title="Descargar Excel">Excel</button>
-                <button onClick={handleExportPDF} className="btn-export pdf" title="Descargar PDF">PDF</button>
+                <button 
+                  onClick={handleExportCSV} 
+                  className="btn-export csv" 
+                  disabled={!canExport}
+                  title={canExport ? "Descargar CSV" : "Exportación bloqueada hasta el 26 de marzo"}
+                >
+                  CSV
+                </button>
+                <button 
+                  onClick={handleExportExcel} 
+                  className="btn-export excel" 
+                  disabled={!canExport}
+                  title={canExport ? "Descargar Excel" : "Exportación bloqueada hasta el 26 de marzo"}
+                >
+                  Excel
+                </button>
+                <button 
+                  onClick={handleExportPDF} 
+                  className="btn-export pdf" 
+                  disabled={!canExport}
+                  title={canExport ? "Descargar PDF" : "Exportación bloqueada hasta el 26 de marzo"}
+                >
+                  PDF
+                </button>
               </div>
+              {!canExport && (
+                <div className="export-lock-notice">
+                  🔒 Exportación bloqueada hasta el 26 de marzo (Día del Evento)
+                </div>
+              )}
               <div className="rows-selector">
                 <span>Mostrar:</span>
                 <select 
@@ -467,6 +504,9 @@ const App: React.FC = () => {
           
           <div className="privacy-notice">
             <p>ℹ️ {data?.message}</p>
+            <p className="sync-info">
+              🕒 Los datos se sincronizan automáticamente a las 08:00, 12:30, 17:30 y 20:00 (Hora España).
+            </p>
           </div>
         </section>
       </main>
