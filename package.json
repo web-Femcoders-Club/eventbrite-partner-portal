@@ -11,6 +11,7 @@
     "build:web": "npm run build -w web",
     "build:api": "npm run build -w api",
     "build": "npm run build:web && npm run build:api",
+    "railway:build": "rm -rf node_modules package-lock.json && npm install && npm run build",
     "start": "npm start -w api"
   },
   "engines": {
