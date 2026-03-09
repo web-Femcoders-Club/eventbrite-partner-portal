@@ -3,9 +3,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sequelize = new Sequelize(process.env.MYSQL_URL || '', {
+const connectionString = process.env.MYSQL_URL;
+
+if (!connectionString) {
+  console.error('❌ CRITICAL ERROR: MYSQL_URL is not defined in environment variables.');
+  console.error('Check Railway dashboard -> Variables and ensure MYSQL_URL is set.');
+  process.exit(1);
+}
+
+const sequelize = new Sequelize(connectionString, {
   dialect: 'mysql',
   logging: false,
+  // Ajustes para producción en Railway
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
 });
 
 // 1. Modelo de Socios/Partners (InfoJobs, etc.) - NUEVA
