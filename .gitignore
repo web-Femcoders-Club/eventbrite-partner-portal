@@ -6,5 +6,5 @@ dist/
 .vscode/
 .idea/
 STRATEGIC_PLAN_CONFIDENTIAL.md
-docs/
+**/docs/
 PROJECT_STANDARDS.md
