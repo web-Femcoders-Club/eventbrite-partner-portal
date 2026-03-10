@@ -1,5 +1,5 @@
-import { Sequelize, DataTypes, Model } from 'sequelize';
 import dotenv from 'dotenv';
+import { DataTypes, Model, Sequelize } from 'sequelize';
 
 dotenv.config();
 
@@ -62,7 +62,9 @@ EventAttendee.init({
   eventId: { type: DataTypes.STRING },
   orderFirstName: { type: DataTypes.STRING, allowNull: true },
   orderLastName: { type: DataTypes.STRING, allowNull: true },
-  orderEmail: { type: DataTypes.STRING, allowNull: true }
+  orderEmail: { type: DataTypes.STRING, allowNull: true },
+  brevoNotified: { type: DataTypes.BOOLEAN, defaultValue: false },
+  brevoNotifiedAt: { type: DataTypes.DATE, allowNull: true }
 }, { 
   sequelize, 
   modelName: 'EventAttendee', 
@@ -90,3 +92,4 @@ Event.hasMany(EventAttendee, { foreignKey: 'eventId' });
 EventAttendee.belongsTo(Event, { foreignKey: 'eventId' });
 
 export { sequelize };
+

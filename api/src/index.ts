@@ -1,16 +1,14 @@
 // Force redeploy - Update: Responsive & Social Security Fixes
+import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
-import compression from 'compression';
+import path from 'path';
+import adminRoutes from './routes/adminRoutes';
 import partnerRoutes from './routes/partnerRoutes';
 
 dotenv.config();
-
-import { sequelize } from './database';
-
-import path from 'path';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -25,6 +23,9 @@ app.use(express.json());
 
 // Rutas de Partners
 app.use('/api/partners', partnerRoutes);
+
+// Rutas de Administración (Exclusivas FemCoders)
+app.use('/api/admin', adminRoutes);
 
 // Servir Frontend en producción (Un solo servicio en Railway)
 const webDistPath = path.join(__dirname, '../../web/dist');
