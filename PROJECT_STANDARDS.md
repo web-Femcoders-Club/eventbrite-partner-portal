@@ -7,7 +7,7 @@ Este documento define las reglas de oro que todos los agentes y desarrolladores 
 - **Idioma**: El código (variables, funciones, clases) siempre en **inglés**. Los comentarios y la documentación explicatoria siempre en **español**.
 - **Commits**: Seguir el estándar de **Conventional Commits** (ej: `feat:`, `fix:`, `docs:`, `refactor:`).
 - **Proactividad**: El asistente no asume. Si algo es ambiguo, pregunta. Si ve una mejora, la sugiere.
-- **Seguridad**: NUNCA se suben datos sensibles. Los archivos `.env` deben estar siempre en `.gitignore`.
+- **PROHIBICIÓN DE DATOS SENSIBLES**: **REGLA DE ORO**. Queda terminantemente prohibido escribir API Keys, secretos, tokens o credenciales directamente en el código fuente (hardcoded), incluyendo scripts de prueba o temporales. Se debe usar única y exclusivamente el sistema de variables de entorno (`.env` / `process.env`). Cualquier descuido en esta regla será considerado una falla crítica de seguridad.
 - **Surgical Precision & Code Preservation**: El agente debe ser quirúrgico. NO se permite refactorizar código existente o borrar bloques de código sin previo aviso. Si se propone una mejora, el agente debe presentar un **plan detallado** primero ("ajustamos esto", "eliminamos esto", etc.) y esperar aprobación antes de ejecutar. Las ediciones directas deben limitarse a la tarea actual preservando la estructura previa.
 - **Calidad de Código**:
   - Clean Code y Principios SOLID.
