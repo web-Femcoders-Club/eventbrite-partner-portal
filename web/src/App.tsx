@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
-import React, { useEffect, useState } from 'react';
-import './index.css';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
+import './index.css';
 
 interface Attendee {
   firstName: string;
@@ -58,6 +58,21 @@ const App: React.FC = () => {
   // En producción (Railway) usamos el mismo servidor, en local apuntamos al puerto 3001
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
   const API_URL = `${API_BASE}/api/partners/active-event`;
+  
+  // FemCoders (Admin) siempre tiene acceso.
+  const isFemCoders = data?.partner?.toLowerCase().includes('femcoders') || data?.partner?.toLowerCase().includes('admin');
+
+  // InfoJobs solo puede exportar el día del evento (26 de Marzo).
+  const isExportWindowOpen = () => {
+    const today = new Date();
+    // 26 de Marzo de 2026 (JS: 2026, 2, 26)
+    return today.getFullYear() === 2026 && 
+           today.getMonth() === 2 && 
+           today.getDate() === 26;
+  };
+
+  // FemCoders tiene acceso ilimitado. InfoJobs solo el día 26.
+  const canExport = isFemCoders || isExportWindowOpen();
 
   const fetchRegistrations = async () => {
     if (!apiKey) return;
@@ -137,7 +152,7 @@ const App: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    if (!data) return;
+    if (!data || !canExport) return;
     const csvHeader = 'Nombre,Apellidos,Email,DNI,Estado\n';
     const csvRows = filteredAttendees.map(a => {
       const email = a.orderEmail || a.email || '';
@@ -160,7 +175,7 @@ const App: React.FC = () => {
   };
 
   const handleExportExcel = () => {
-    if (!data) return;
+    if (!data || !canExport) return;
     const worksheet = XLSX.utils.json_to_sheet(filteredAttendees.map(a => ({
       Nombre: a.firstName || '',
       Apellidos: a.lastName || '',
@@ -177,7 +192,7 @@ const App: React.FC = () => {
   };
 
   const handleExportPDF = () => {
-    if (!data) return;
+    if (!data || !canExport) return;
 
     // Función interna para limpiar acentos y evitar el error de espaciado en jsPDF
     const cleanForPDF = (str: string) => {
@@ -196,6 +211,19 @@ const App: React.FC = () => {
       a.ticketCount,
       (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado'
     ]);
+
+    // Título y branding (Dibujar antes de la tabla para que aparezca en la página 1)
+    const eventTitle = "Estructuras en Movimiento: mujeres que transforman el futuro";
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(71, 55, 187); 
+    doc.text(`FemCoders Club - Listado de Asistentes`, 14, 15);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Evento: ${eventTitle}`, 14, 22);
+    doc.text(`Exportado: ${new Date().toLocaleDateString()}`, 14, 27);
 
     doc.autoTable({
       head: [tableColumn],
@@ -224,19 +252,6 @@ const App: React.FC = () => {
         5: { cellWidth: 25, halign: 'center' }
       }
     });
-
-    // Título y branding
-    const eventTitle = "Estructuras en Movimiento: mujeres que transforman el futuro";
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(71, 55, 187); 
-    doc.text(`FemCoders Club - Listado de Asistentes`, 14, 15);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Evento: ${eventTitle}`, 14, 22);
-    doc.text(`Exportado: ${new Date().toLocaleDateString()}`, 14, 27);
     
     doc.save(`asistentes_${eventTitle.replace(/[: ]/g, '_')}.pdf`);
   };
@@ -326,10 +341,36 @@ const App: React.FC = () => {
             </div>
             <div className="table-controls">
               <div className="export-tools">
-                <button onClick={handleExportCSV} className="btn-export csv" title="Descargar CSV">CSV</button>
-                <button onClick={handleExportExcel} className="btn-export excel" title="Descargar Excel">Excel</button>
-                <button onClick={handleExportPDF} className="btn-export pdf" title="Descargar PDF">PDF</button>
+                <button 
+                  onClick={handleExportCSV} 
+                  className="btn-export csv" 
+                  disabled={!canExport}
+                  title={canExport ? "Descargar CSV" : "Exportación bloqueada hasta el 26 de marzo"}
+                >
+                  CSV
+                </button>
+                <button 
+                  onClick={handleExportExcel} 
+                  className="btn-export excel" 
+                  disabled={!canExport}
+                  title={canExport ? "Descargar Excel" : "Exportación bloqueada hasta el 26 de marzo"}
+                >
+                  Excel
+                </button>
+                <button 
+                  onClick={handleExportPDF} 
+                  className="btn-export pdf" 
+                  disabled={!canExport}
+                  title={canExport ? "Descargar PDF" : "Exportación bloqueada hasta el 26 de marzo"}
+                >
+                  PDF
+                </button>
               </div>
+              {!canExport && (
+                <div className="export-lock-notice">
+                  🔒 Exportación disponible solo el 26 de marzo (Día del Evento)
+                </div>
+              )}
               <div className="rows-selector">
                 <span>Mostrar:</span>
                 <select 
@@ -372,7 +413,7 @@ const App: React.FC = () => {
                   paginatedAttendees.map((attendee, index) => {
                     const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
                     return (
-                      <tr key={index} className={attendee.isIncomplete ? 'row-incomplete' : ''}>
+                      <tr key={index} className={(attendee.isIncomplete || attendee.alerts.dniInvalid) ? 'row-incomplete' : ''}>
                         <td className="index-cell">{globalIndex}</td>
                         <td>
                           <div className="name-with-badge">
@@ -420,7 +461,7 @@ const App: React.FC = () => {
                           </div>
                         </td>
                         <td>
-                          {attendee.isIncomplete ? 
+                          {(attendee.isIncomplete || attendee.alerts.dniInvalid) ? 
                             <span className="status-tag incomplete">Incompleto</span> :
                             data?.fullDataEnabled ? 
                               <span className="status-tag full">Validado</span> : 
@@ -467,6 +508,9 @@ const App: React.FC = () => {
           
           <div className="privacy-notice">
             <p>ℹ️ {data?.message}</p>
+            <p className="sync-info">
+              🕒 Los datos se sincronizan automáticamente a las 08:00, 12:30, 17:30 y 20:00 (Hora España).
+            </p>
           </div>
         </section>
       </main>
