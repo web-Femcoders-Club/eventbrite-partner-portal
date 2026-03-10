@@ -1,4 +1,4 @@
-import { sequelize, Partner, Event, PartnerAccess } from './database';
+import { Partner, PartnerAccess } from './database';
 
 async function seed() {
   try {
@@ -44,20 +44,20 @@ async function seed() {
     // 3. BUSCAR EL EVENTO "Estructuras en Movimiento"
     const EVENT_ID = '1984505957741'; 
     
-    // Le damos acceso a INFOJOBS (Hasta el 27 de marzo)
+    // Le damos acceso a INFOJOBS (Hasta el inicio del 27 de marzo, es decir, el 26 es el último día)
     let accessInfoJobs = await PartnerAccess.findOne({ where: { partnerId: infojobsId, eventId: EVENT_ID } });
     if (!accessInfoJobs) {
       accessInfoJobs = await PartnerAccess.create({
         partnerId: infojobsId,
         eventId: EVENT_ID,
         startDate: new Date('2024-03-01T00:00:00Z'),
-        endDate: new Date('2026-03-27T23:59:59Z'), 
+        endDate: new Date('2026-03-27T00:00:00Z'), // Acceso termina al empezar el 27
         canDownloadFullData: false 
       });
     } else {
       await accessInfoJobs.update({
         startDate: new Date('2024-03-01T00:00:00Z'),
-        endDate: new Date('2026-03-27T23:59:59Z')
+        endDate: new Date('2026-03-27T00:00:00Z')
       });
     }
 
