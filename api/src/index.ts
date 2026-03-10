@@ -17,8 +17,8 @@ const port = process.env.PORT || 3001;
 app.use(helmet({
   contentSecurityPolicy: false, // Desactivado para simplificar la carga del frontend unificado
 }));
-app.use(compression()); // Acelera la carga de archivos estáticos
-app.use(cors());
+app.use(compression() as any); 
+app.use(cors() as any);
 app.use(express.json());
 
 // Rutas de Partners
