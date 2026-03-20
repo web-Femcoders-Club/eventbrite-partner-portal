@@ -10,3 +10,8 @@ dist/
 STRATEGIC_PLAN_CONFIDENTIAL.md
 **/docs/
 PROJECT_STANDARDS.md
+
+# Scripts de diagnostico
+api/check-brevo.ts
+api/count-estructuras.ts
+api/fix-all-brevo.ts

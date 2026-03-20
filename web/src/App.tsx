@@ -33,10 +33,8 @@ interface EventData {
   totalRegistrations: number;
   uniqueAttendees: number;
   summary: {
-    infoRequested: number;
-    dniMissing: number;
-    dniInvalid: number;
-    multipleEntries: number;
+    sinIdentificacion: number;
+    conAcompanantes: number;
   };
   registrations: Attendee[];
   fullDataEnabled: boolean;
@@ -154,6 +152,12 @@ const App: React.FC = () => {
     if (!apiKey || !isFemCoders) return;
     setLoading(true);
     try {
+      // 1. Primero sincronizamos con Brevo para que el panel refleje lo real
+      await fetch(`${API_BASE}/api/admin/sync-brevo-status`, {
+        headers: { 'x-api-key': apiKey }
+      });
+
+      // 2. Luego cargamos la lista ya actualizada
       const resp = await fetch(`${API_BASE}/api/admin/sync-preview`, {
         headers: { 'x-api-key': apiKey }
       });
@@ -279,14 +283,15 @@ const App: React.FC = () => {
 
   const handleExportCSV = () => {
     if (!data || !canExport) return;
-    const csvHeader = 'Nombre,Apellidos,Email,DNI,Estado\n';
+    const csvHeader = 'Nombre,Apellidos,Email,DNI,Acompañantes,Estado\n';
     const csvRows = filteredAttendees.map(a => {
       const email = a.orderEmail || a.email || '';
       const dni = a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A');
+      const guests = a.guests ? a.guests.join(' | ') : '';
       const status = (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado';
       const cleanFName = (a.firstName || '').replace(/,/g, '');
       const cleanLName = (a.lastName || '').replace(/,/g, '');
-      return `"${cleanFName}","${cleanLName}","${email}","${dni}","${status}"`;
+      return `"${cleanFName}","${cleanLName}","${email}","${dni}","${guests}","${status}"`;
     }).join('\n');
     
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
@@ -326,10 +331,11 @@ const App: React.FC = () => {
 
     const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' }) as any;
     
-    const tableColumn = ["#", "Titular / Comprador", "Email", "DNI / ID", "Entradas", "Estado"];
+    const tableColumn = ["#", "Titular / Comprador", "Acompañantes", "Email", "DNI / ID", "Entradas", "Estado"];
     const tableRows = filteredAttendees.map((a, i) => [
       i + 1,
       cleanForPDF(`${a.firstName} ${a.lastName}`),
+      a.guests ? cleanForPDF(a.guests.join(', ')) : '',
       a.orderEmail || a.email,
       a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
       a.ticketCount,
@@ -356,12 +362,13 @@ const App: React.FC = () => {
       styles: { fontSize: 9, cellPadding: 3, font: 'helvetica', valign: 'middle', overflow: 'linebreak' },
       headStyles: { fillColor: [71, 55, 187], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 70 },
-        2: { cellWidth: 80 },
-        3: { cellWidth: 35, halign: 'center' },
-        4: { cellWidth: 20, halign: 'center' },
-        5: { cellWidth: 30, halign: 'center' }
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 65 },
+        4: { cellWidth: 30, halign: 'center' },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 25, halign: 'center' }
       }
     });
     
@@ -514,12 +521,16 @@ const App: React.FC = () => {
                   <span className="stat-value highlight">{data?.totalRegistrations}</span>
                   <span className="stat-label">Entradas Totales</span>
                 </div>
-                {data?.summary && (data.summary.infoRequested > 0 || data.summary.dniInvalid > 0) && (
+                {data?.summary && (data.summary.sinIdentificacion > 0 || data.summary.conAcompanantes > 0) && (
                   <div className="alert-panel shadow-soft">
                     <h3>🔔 Incidencias detectadas</h3>
                     <div className="alert-items">
-                      {data.summary.infoRequested > 0 && <span>Incompletos: <strong>{data.summary.infoRequested}</strong></span>}
-                      {data.summary.dniInvalid > 0 && <span>DNI Incorrectos: <strong>{data.summary.dniInvalid}</strong></span>}
+                      {data.summary.sinIdentificacion > 0 && (
+                        <span>Sin identificación válida: <strong>{data.summary.sinIdentificacion}</strong></span>
+                      )}
+                      {data.summary.conAcompanantes > 0 && (
+                        <span>Con acompañantes: <strong>{data.summary.conAcompanantes}</strong></span>
+                      )}
                     </div>
                   </div>
                 )}

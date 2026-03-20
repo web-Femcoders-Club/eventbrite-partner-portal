@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTemplatePreview, migrateDb, notifyAttendee, sendTestEmail, syncBrevo, syncPreview } from '../controllers/adminController';
+import { getTemplatePreview, migrateDb, notifyAttendee, sendTestEmail, syncBrevo, syncBrevoStatus, syncPreview } from '../controllers/adminController';
 import { Partner } from '../database';
 
 const router = Router();
@@ -25,6 +25,7 @@ router.post('/sync-brevo', strictAdminAuth, syncBrevo);
 router.post('/send-test-email', strictAdminAuth, sendTestEmail);
 router.post('/notify-attendee', strictAdminAuth, notifyAttendee);
 router.get('/sync-preview', strictAdminAuth, syncPreview);
+router.get('/sync-brevo-status', strictAdminAuth, syncBrevoStatus);
 router.get('/email-template-preview', strictAdminAuth, getTemplatePreview);
 
 export default router;

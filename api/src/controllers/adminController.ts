@@ -227,13 +227,98 @@ export const notifyAttendee = async (req: Request, res: Response) => {
     if (latestEvent) {
       await EventAttendee.update(
         { brevoNotified: true, brevoNotifiedAt: new Date() },
-        { where: { email, eventId: latestEvent.get('id') } }
+        { 
+          where: { 
+            eventId: latestEvent.get('id'),
+            [require('sequelize').Op.or]: [
+              { email },
+              { orderEmail: email }
+            ]
+          } 
+        }
       );
     }
 
     return res.json({ success: true, message: 'Notificación enviada y registrada.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Error al enviar notificación' });
+  }
+};
+
+/**
+ * Sincroniza el historial de emails enviados de Brevo con la base de datos.
+ * Consulta la API de Brevo, busca los emails relacionados con asistentes del evento
+ * y actualiza brevoNotified = true para los que ya recibieron el correo.
+ */
+export const syncBrevoStatus = async (req: Request, res: Response) => {
+  try {
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    apiInstance.authentications['apiKey'].apiKey = process.env.BREVO_API_KEY;
+
+    // Traemos los emails del último mes (offset paginado, máx 1000)
+    let allEmails: string[] = [];
+    let offset = 0;
+    const limit = 500;
+    
+    // Calculamos fecha de inicio: hace 60 días por si acaso
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 60);
+    const startDateStr = startDate.toISOString().split('T')[0];
+
+    while (true) {
+      const result = await apiInstance.getTransacEmailsList(
+        undefined, // messageId
+        undefined, // templateId 
+        undefined, // messageId
+        undefined, // startDate - no funciona bien en algunos SDKs, filtramos a mano
+        undefined, // endDate
+        limit,
+        offset,
+        undefined  // sort
+      );
+      
+      const emails = result?.body?.transactionalEmails || [];
+      if (emails.length === 0) break;
+
+      // Filtramos por fecha manualmente y tomamos el destinatario
+      for (const mail of emails) {
+        const sentAt = new Date(mail.date || mail.createdAt);
+        if (sentAt >= startDate) {
+          if (mail.to) allEmails.push(mail.to.toLowerCase());
+        }
+      }
+      
+      if (emails.length < limit) break;
+      offset += limit;
+    }
+
+    if (allEmails.length === 0) {
+      return res.json({ success: true, message: 'No se encontraron emails en Brevo para sincronizar.', updated: 0 });
+    }
+
+    // Construimos listado único
+    const uniqueEmails = [...new Set(allEmails)];
+    const emailsStr = uniqueEmails.map(e => `'${e}'`).join(',');
+
+    // Actualizamos TODOS los registros para los que Brevo tiene evidencia de envío
+    const { sequelize } = require('../database');
+    const [updateResult]: any = await sequelize.query(
+      `UPDATE event_attendee 
+       SET brevoNotified = 1, brevoNotifiedAt = NOW() 
+       WHERE brevoNotified = 0 
+       AND (LOWER(email) IN (${emailsStr}) OR LOWER(orderEmail) IN (${emailsStr}))`
+    );
+
+    const updated = updateResult?.affectedRows || 0;
+
+    return res.json({ 
+      success: true, 
+      message: `Sincronización completada. Se actualizaron ${updated} registros.`,
+      brevoEmailsFound: uniqueEmails.length,
+      updated
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Error al sincronizar con Brevo: ' + (error?.message || 'desconocido') });
   }
 };
 
