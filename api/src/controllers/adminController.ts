@@ -79,7 +79,25 @@ export const syncPreview = async (req: Request, res: Response) => {
     });
 
     const buyerMap = new Map<string, any>();
-    const isValidDNI = (dni: string) => /^[XYZ0-9][0-9]{7}[TRWAGMYFPDXBNJZSQVHLCKE]$/i.test(dni || '');
+    const isValidDNI = (dni: string, firstName: string = '', lastName: string = '') => {
+      if (!dni || dni.trim() === '') return false;
+      const clean = dni.replace(/\s+/g, '').toUpperCase();
+      
+      if (/^[XYZ0-9][0-9]{7}[TRWAGMYFPDXBNJZSQVHLCKE]$/.test(clean)) return true;
+      
+      const fName = firstName.replace(/\s+/g, '').toUpperCase();
+      const lName = lastName.replace(/\s+/g, '').toUpperCase();
+      if (fName.length >= 3 && clean.includes(fName)) return false;
+      if (lName.length >= 3 && clean.includes(lName)) return false;
+
+      if (/^[A-Z0-9]{6,15}$/.test(clean) && /[A-Z]/.test(clean) && /[0-9]/.test(clean)) {
+        const numCount = (clean.match(/[0-9]/g) || []).length;
+        if (numCount >= 4 && !/[A-Z]{3,}/.test(clean)) {
+          return true;
+        }
+      }
+      return false;
+    };
 
     attendees.forEach(a => {
       const raw = a.toJSON() as any;
@@ -102,7 +120,7 @@ export const syncPreview = async (req: Request, res: Response) => {
       // Si alguno de los tickets ya fue notificado, marcamos al comprador como notificado
       if (raw.brevoNotified) b.isNotified = true;
       
-      const hasBadDni = !raw.dni || raw.dni.trim() === '' || !isValidDNI(raw.dni) || (raw.firstName || '').toLowerCase().includes('info requested');
+      const hasBadDni = !raw.dni || raw.dni.trim() === '' || !isValidDNI(raw.dni, raw.firstName, raw.lastName) || (raw.firstName || '').toLowerCase().includes('info requested');
       
       if (hasBadDni && !b.reasons.includes('DNI Incompleto')) {
         b.reasons.push('DNI Incompleto');

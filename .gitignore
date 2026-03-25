@@ -15,3 +15,5 @@ PROJECT_STANDARDS.md
 api/check-brevo.ts
 api/count-estructuras.ts
 api/fix-all-brevo.ts
+api/check-marla.js
+api/check-marla.ts

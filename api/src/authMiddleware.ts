@@ -77,7 +77,7 @@ export const checkPartnerAccess = async (req: Request, res: Response, next: Next
     if (!access) {
       return res.status(403).json({ 
         error: 'Acceso temporal finalizado o no autorizado',
-        message: 'Tu periodo de acceso a este evento ha terminado o aún no ha comenzado. Si crees que esto es un error, por favor contacta con irina.ichim@femcodersclub.com.',
+        message: 'Tu periodo de acceso al portal ha concluido. Si necesitas renovar el acceso o tienes alguna duda, por favor ponte en contacto con Irina Ichim en irina.ichim@femcodersclub.com.',
         contact: 'irina.ichim@femcodersclub.com'
       });
     }

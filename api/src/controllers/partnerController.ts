@@ -14,14 +14,32 @@ export const getPartnerRegistrations = async (req: Request, res: Response) => {
 
     const groupedMap = new Map<string, any>();
 
-  // Acepta DNI/NIE español Y pasaportes extranjeros (>= 8 caracteres alfanuméricos mixtos)
-  const isValidDNI = (dni: string) => {
+  // Acepta DNI/NIE español Y pasaportes extranjeros (estricto)
+  const isValidDNI = (dni: string, firstName: string = '', lastName: string = '') => {
     if (!dni || dni.trim() === '') return false;
-    const clean = dni.trim();
-    // DNI/NIE español
-    if (/^[XYZ0-9][0-9]{7}[TRWAGMYFPDXBNJZSQVHLCKE]$/i.test(clean)) return true;
-    // Pasaporte extranjero: >= 8 chars, contiene letras Y dígitos
-    if (clean.length >= 8 && /[A-Za-z]/.test(clean) && /[0-9]/.test(clean)) return true;
+    // Eliminamos espacios internos por si lo escriben como "Y 1234567 B"
+    const clean = dni.replace(/\s+/g, '').toUpperCase();
+    
+    // DNI/NIE español estricto
+    if (/^[XYZ0-9][0-9]{7}[TRWAGMYFPDXBNJZSQVHLCKE]$/.test(clean)) return true;
+    
+    // Si contiene el nombre o el apellido, es un intento de saltarse la validación (ej. "MCorales1")
+    const fName = firstName.replace(/\s+/g, '').toUpperCase();
+    const lName = lastName.replace(/\s+/g, '').toUpperCase();
+    if (fName.length >= 3 && clean.includes(fName)) return false;
+    if (lName.length >= 3 && clean.includes(lName)) return false;
+
+    // Pasaporte / ID extranjero: 6 a 15 caracteres estrictamente alfanuméricos
+    if (/^[A-Z0-9]{6,15}$/.test(clean) && /[A-Z]/.test(clean) && /[0-9]/.test(clean)) {
+      // Un pasaporte/ID real:
+      // 1. Tiene al menos 4 números
+      // 2. Normalmente no tiene más de 2 letras consecutivas (ej. AB123456). Si meten "Aak116419" o "AAA12345", lo rechazamos.
+      const numCount = (clean.match(/[0-9]/g) || []).length;
+      if (numCount >= 4 && !/[A-Z]{3,}/.test(clean)) {
+        return true;
+      }
+    }
+    
     return false;
   };
 
@@ -50,7 +68,7 @@ export const getPartnerRegistrations = async (req: Request, res: Response) => {
           existing.guests.push(guestName);
         }
         // Si el invitado tiene DNI inválido, lo marcamos
-        if (!isValidDNI(raw.dni || '')) {
+        if (!isValidDNI(raw.dni || '', raw.firstName, raw.lastName)) {
           existing.hasGuestWithBadDni = true;
         }
       }
@@ -67,7 +85,7 @@ export const getPartnerRegistrations = async (req: Request, res: Response) => {
       data.lastName = raw.orderLastName || raw.lastName;
 
       const dniMissing = !data.dni || data.dni.trim() === '';
-      const dniInvalid = !dniMissing && !isValidDNI(data.dni || '');
+      const dniInvalid = !dniMissing && !isValidDNI(data.dni || '', raw.firstName, raw.lastName);
 
       data.alerts = {
         isInfoRequested: isPlaceholder,

@@ -593,6 +593,43 @@ tr:hover td {
   justify-content: center;
 }
 
+.error-actions-spaced {
+  margin-top: 24px;
+}
+
+/* Pantalla de acceso expirado / finalizado */
+.error-contact-lead {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem !important;
+}
+
+.error-contact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #fff0f6, #f0f9ff);
+  border: 1px solid rgba(176, 36, 118, 0.2);
+  color: var(--brand-magenta);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 50px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(176, 36, 118, 0.08);
+}
+
+.error-contact-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(176, 36, 118, 0.18);
+  background: linear-gradient(135deg, #ffe4f0, #e0f2fe);
+}
+
+.contact-icon {
+  font-size: 1.1rem;
+}
+
 .btn-primary, .btn-secondary {
   display: inline-block;
   padding: 0.8rem 1.8rem;

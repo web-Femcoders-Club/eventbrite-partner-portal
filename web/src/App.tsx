@@ -66,13 +66,12 @@ const App: React.FC = () => {
   // FemCoders (Admin) siempre tiene acceso a todo.
   const isFemCoders = data?.partner?.toLowerCase().includes('femcoders') || data?.partner?.toLowerCase().includes('admin');
 
-  // InfoJobs solo puede exportar el día del evento (26 de Marzo).
+  // InfoJobs puede exportar desde el 25 hasta el 27 de Marzo de 2026.
   const isExportWindowOpen = () => {
     const today = new Date();
-    // 26 de Marzo de 2026 (JS: 2026, 2, 26)
-    return today.getFullYear() === 2026 && 
-           today.getMonth() === 2 && 
-           today.getDate() === 26;
+    const start = new Date(2026, 2, 25, 0, 0, 0);   // 25 Mar 2026 inicio
+    const end   = new Date(2026, 2, 27, 23, 59, 59); // 27 Mar 2026 fin de día
+    return today >= start && today <= end;
   };
 
   const canExport = isFemCoders || isExportWindowOpen();
@@ -283,15 +282,21 @@ const App: React.FC = () => {
 
   const handleExportCSV = () => {
     if (!data || !canExport) return;
-    const csvHeader = 'Nombre,Apellidos,Email,DNI,Acompañantes,Estado\n';
+    // InfoJobs no recibe emails por cumplimiento RGPD
+    const csvHeader = isFemCoders
+      ? 'Nombre,Apellidos,Email,DNI,Acompañantes,Estado\n'
+      : 'Nombre,Apellidos,DNI,Entradas,Acompañantes,Estado\n';
     const csvRows = filteredAttendees.map(a => {
-      const email = a.orderEmail || a.email || '';
       const dni = a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A');
       const guests = a.guests ? a.guests.join(' | ') : '';
       const status = (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado';
       const cleanFName = (a.firstName || '').replace(/,/g, '');
       const cleanLName = (a.lastName || '').replace(/,/g, '');
-      return `"${cleanFName}","${cleanLName}","${email}","${dni}","${guests}","${status}"`;
+      if (isFemCoders) {
+        const email = a.orderEmail || a.email || '';
+        return `"${cleanFName}","${cleanLName}","${email}","${dni}","${guests}","${status}"`;
+      }
+      return `"${cleanFName}","${cleanLName}","${dni}","${a.ticketCount}","${guests}","${status}"`;
     }).join('\n');
     
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
@@ -306,15 +311,20 @@ const App: React.FC = () => {
 
   const handleExportExcel = () => {
     if (!data || !canExport) return;
-    const worksheet = XLSX.utils.json_to_sheet(filteredAttendees.map(a => ({
-      Nombre: a.firstName || '',
-      Apellidos: a.lastName || '',
-      Email: a.orderEmail || a.email || '',
-      'DNI / ID': a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
-      Estado: (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado',
-      Entradas: a.ticketCount,
-      Acompañantes: a.guests ? a.guests.join(', ') : ''
-    })));
+    // InfoJobs no recibe emails por cumplimiento RGPD
+    const rows = filteredAttendees.map(a => {
+      const base = {
+        Nombre: a.firstName || '',
+        Apellidos: a.lastName || '',
+        'DNI / ID': a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
+        Entradas: a.ticketCount,
+        Acompañantes: a.guests ? a.guests.join(', ') : '',
+        Estado: (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado'
+      };
+      if (isFemCoders) return { ...base, Email: a.orderEmail || a.email || '' };
+      return base;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(rows);
     const eventTitle = "Estructuras en Movimiento: mujeres que transforman el futuro";
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Asistentes");
@@ -330,19 +340,29 @@ const App: React.FC = () => {
     };
 
     const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' }) as any;
-    
-    const tableColumn = ["#", "Titular / Comprador", "Acompañantes", "Email", "DNI / ID", "Entradas", "Estado"];
-    const tableRows = filteredAttendees.map((a, i) => [
-      i + 1,
-      cleanForPDF(`${a.firstName} ${a.lastName}`),
-      a.guests ? cleanForPDF(a.guests.join(', ')) : '',
-      a.orderEmail || a.email,
-      a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
-      a.ticketCount,
-      (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado'
-    ]);
-
     const eventTitle = "Estructuras en Movimiento: mujeres que transforman el futuro";
+
+    // InfoJobs no recibe emails por cumplimiento RGPD
+    const tableColumn = isFemCoders
+      ? ["#", "Titular / Comprador", "Acompañantes", "Email", "DNI / ID", "Entradas", "Estado"]
+      : ["#", "Titular / Comprador", "Acompañantes", "DNI / ID", "Entradas", "Estado"];
+
+    const tableRows = filteredAttendees.map((a, i) => {
+      const base = [
+        i + 1,
+        cleanForPDF(`${a.firstName} ${a.lastName}`),
+        a.guests ? cleanForPDF(a.guests.join(', ')) : '',
+        a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
+        a.ticketCount,
+        (a.isIncomplete || a.alerts.dniInvalid) ? 'Incompleto' : 'Validado'
+      ];
+      if (isFemCoders) {
+        // Insertar email en posición 3 (después de acompañantes)
+        base.splice(3, 0, a.orderEmail || a.email || '');
+      }
+      return base;
+    });
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
     doc.setTextColor(71, 55, 187); 
@@ -354,6 +374,26 @@ const App: React.FC = () => {
     doc.text(`Evento: ${eventTitle}`, 14, 22);
     doc.text(`Exportado: ${new Date().toLocaleDateString()}`, 14, 27);
 
+    // Ajuste de columnas según si se incluye email o no
+    const columnStyles = isFemCoders
+      ? {
+          0: { cellWidth: 12, halign: 'center' },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 55 },
+          4: { cellWidth: 30, halign: 'center' },
+          5: { cellWidth: 20, halign: 'center' },
+          6: { cellWidth: 25, halign: 'center' }
+        }
+      : {
+          0: { cellWidth: 12, halign: 'center' },
+          1: { cellWidth: 70 },
+          2: { cellWidth: 70 },
+          3: { cellWidth: 40, halign: 'center' },
+          4: { cellWidth: 25, halign: 'center' },
+          5: { cellWidth: 30, halign: 'center' }
+        };
+
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
@@ -361,31 +401,44 @@ const App: React.FC = () => {
       theme: 'grid',
       styles: { fontSize: 9, cellPadding: 3, font: 'helvetica', valign: 'middle', overflow: 'linebreak' },
       headStyles: { fillColor: [71, 55, 187], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
-      columnStyles: {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 50 },
-        3: { cellWidth: 65 },
-        4: { cellWidth: 30, halign: 'center' },
-        5: { cellWidth: 20, halign: 'center' },
-        6: { cellWidth: 25, halign: 'center' }
-      }
+      columnStyles
     });
     
     doc.save(`asistentes_${eventTitle.replace(/[: ]/g, '_')}.pdf`);
   };
 
   if (loading) return <div className="loading-state">Cargando portal seguro...</div>;
+  // Detectar si el error es de acceso expirado
+  const isExpiredAccess = error?.toLowerCase().includes('periodo de acceso') || error?.toLowerCase().includes('acceso temporal finalizado');
+
   if (error) return (
     <div className="error-container">
       <div className="error-card">
-        <div className="error-icon">⚠️</div>
-        <h2>Aviso del Sistema</h2>
-        <p>{error}</p>
-        <div className="error-actions">
-          <button onClick={handleLogout} className="btn-secondary">Reintentar / Cambiar Código</button>
-          <a href="mailto:irina.ichim@femcodersclub.com" className="btn-primary">Soporte Técnico</a>
-        </div>
+        {isExpiredAccess ? (
+          <>
+            <div className="error-icon">🔒</div>
+            <h2>Acceso Finalizado</h2>
+            <p>Tu periodo de acceso al portal ha concluido. Muchas gracias por la colaboración durante el evento.</p>
+            <p className="error-contact-lead">Si necesitas acceder de nuevo o tienes alguna duda, ponte en contacto con:</p>
+            <a href="mailto:irina.ichim@femcodersclub.com" className="error-contact-pill">
+              <span className="contact-icon">✉️</span>
+              <span>irina.ichim@femcodersclub.com</span>
+            </a>
+            <div className="error-actions error-actions-spaced">
+              <button onClick={handleLogout} className="btn-secondary">Volver al inicio</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="error-icon">⚠️</div>
+            <h2>Aviso del Sistema</h2>
+            <p>{error}</p>
+            <div className="error-actions">
+              <button onClick={handleLogout} className="btn-secondary">Reintentar / Cambiar Código</button>
+              <a href="mailto:irina.ichim@femcodersclub.com" className="btn-primary">Soporte Técnico</a>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -555,7 +608,7 @@ const App: React.FC = () => {
                     <button onClick={handleExportExcel} className="btn-export excel" disabled={!canExport}>Excel</button>
                     <button onClick={handleExportPDF} className="btn-export pdf" disabled={!canExport}>PDF</button>
                   </div>
-                  {!canExport && <div className="export-lock-notice">🔒 Exportación disponible solo el 26 de marzo</div>}
+                  {!canExport && <div className="export-lock-notice">🔒 Exportación disponible del 25 al 27 de marzo</div>}
                   <div className="rows-selector">
                     <span>Mostrar:</span>
                     <select 
