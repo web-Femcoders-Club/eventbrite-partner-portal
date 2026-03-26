@@ -428,3 +428,5 @@ export const getTemplatePreview = async (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/html');
   return res.send(html);
 };
+
+// Auto-trigger Railway deploy
