@@ -249,7 +249,7 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredAttendees = data?.registrations.filter(a => {
+  const filteredAttendees = (data?.registrations || []).filter(a => {
     const searchLower = searchTerm.toLowerCase();
     
     const fullName = `${a.firstName} ${a.lastName}`.toLowerCase();
@@ -261,7 +261,20 @@ const App: React.FC = () => {
     return fullName.includes(searchLower) || 
            emailMatch || 
            guestsMatch;
-  }) || [];
+  }).sort((a, b) => {
+    const lastNameA = (a.lastName || a.orderLastName || '').trim().toLowerCase();
+    const lastNameB = (b.lastName || b.orderLastName || '').trim().toLowerCase();
+    if (lastNameA < lastNameB) return -1;
+    if (lastNameA > lastNameB) return 1;
+    
+    // Si el apellido es igual, ordenamos por nombre
+    const firstNameA = (a.firstName || a.orderFirstName || '').trim().toLowerCase();
+    const firstNameB = (b.firstName || b.orderFirstName || '').trim().toLowerCase();
+    if (firstNameA < firstNameB) return -1;
+    if (firstNameA > firstNameB) return 1;
+    
+    return 0;
+  });
 
   // Paginación
   const totalPages = Math.ceil(filteredAttendees.length / itemsPerPage);
@@ -284,8 +297,9 @@ const App: React.FC = () => {
     if (!data || !canExport) return;
     // InfoJobs no recibe emails por cumplimiento RGPD
     const csvHeader = isFemCoders
-      ? 'Nombre,Apellidos,Email,DNI,Acompañantes,Estado\n'
-      : 'Nombre,Apellidos,DNI,Entradas,Acompañantes,Estado\n';
+      ? 'Apellidos,Nombre,Email,DNI,Acompañantes,Estado\n'
+      : 'Apellidos,Nombre,DNI,Entradas,Acompañantes,Estado\n';
+      
     const csvRows = filteredAttendees.map(a => {
       const dni = a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A');
       const guests = a.guests ? a.guests.join(' | ') : '';
@@ -294,9 +308,9 @@ const App: React.FC = () => {
       const cleanLName = (a.lastName || '').replace(/,/g, '');
       if (isFemCoders) {
         const email = a.orderEmail || a.email || '';
-        return `"${cleanFName}","${cleanLName}","${email}","${dni}","${guests}","${status}"`;
+        return `"${cleanLName}","${cleanFName}","${email}","${dni}","${guests}","${status}"`;
       }
-      return `"${cleanFName}","${cleanLName}","${dni}","${a.ticketCount}","${guests}","${status}"`;
+      return `"${cleanLName}","${cleanFName}","${dni}","${a.ticketCount}","${guests}","${status}"`;
     }).join('\n');
     
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
@@ -311,11 +325,12 @@ const App: React.FC = () => {
 
   const handleExportExcel = () => {
     if (!data || !canExport) return;
+    
     // InfoJobs no recibe emails por cumplimiento RGPD
     const rows = filteredAttendees.map(a => {
       const base = {
-        Nombre: a.firstName || '',
         Apellidos: a.lastName || '',
+        Nombre: a.firstName || '',
         'DNI / ID': a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
         Entradas: a.ticketCount,
         Acompañantes: a.guests ? a.guests.join(', ') : '',
@@ -348,9 +363,10 @@ const App: React.FC = () => {
       : ["#", "Titular / Comprador", "Acompañantes", "DNI / ID", "Entradas", "Estado"];
 
     const tableRows = filteredAttendees.map((a, i) => {
+      const fullName = a.lastName ? `${a.lastName}, ${a.firstName}` : a.firstName;
       const base = [
         i + 1,
-        cleanForPDF(`${a.firstName} ${a.lastName}`),
+        cleanForPDF(fullName),
         a.guests ? cleanForPDF(a.guests.join(', ')) : '',
         a.dni || (a.alerts.isInfoRequested ? 'PENDIENTE' : 'N/A'),
         a.ticketCount,
@@ -649,7 +665,7 @@ const App: React.FC = () => {
                             <td className="index-cell">{globalIndex}</td>
                             <td>
                             <div className="main-identity">
-                                <strong>{attendee.firstName} {attendee.lastName}</strong>
+                                <strong>{attendee.lastName ? `${attendee.lastName}, ${attendee.firstName}` : attendee.firstName}</strong>
                                 {attendee.ticketCount > 1 && (
                                   <span className="ticket-count-simple">x{attendee.ticketCount}</span>
                                 )}
